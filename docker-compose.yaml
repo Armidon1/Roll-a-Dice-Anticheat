@@ -1,0 +1,20 @@
+services:  
+  bob:
+    build: . 
+    command: python bob.py
+    ports:
+      - "8080:8080"
+    hostname: bob
+    restart: always
+  alice:
+    build: .
+    command: python alice.py
+    depends_on:
+      - bob
+    stdin_open: true
+    tty: true
+    restart: always
+
+  
+
+
