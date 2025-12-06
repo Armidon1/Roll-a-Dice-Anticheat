@@ -17,6 +17,7 @@ alice_commitment = ""
 my_move = ""
 alice_move = ""
 alice_nonce = ""
+alice_should_send_nonce = False
 
 def determine_winner(alice_move, my_move):
     final_seed = my_move + alice_move
@@ -66,12 +67,18 @@ def handle_game_commitment(message, conn):
         "value": my_move
     }
     send_json(conn, response)
+    global alice_should_send_nonce
+    alice_should_send_nonce = True
     print(f"[BOB] Sent my move to Alice.")   
     conn.settimeout(5.0)     
     print("[BOB] Waiting 5 seconds for Alice to reveal nonce...")
 
 def handle_reveal_nonce(message):
-    global alice_nonce
+    global alice_nonce, alice_should_send_nonce
+    if not alice_should_send_nonce:
+        print("[BOB] Unexpected nonce reveal from Alice!")
+        return False
+    alice_should_send_nonce = False
     alice_nonce = message.get("value")
     print(f"[BOB] Received Alice's nonce: {alice_nonce}")
 
@@ -111,6 +118,9 @@ def handle(conn):
                 
             match msg.get("type"):
                 case "game-commitment":
+                    if alice_should_send_nonce:
+                        print("[Bob] Unexpected game commitment from Alice! She didn't send the nonce yet. She must be cheating!")
+                        break
                     handle_game_commitment(msg, conn)
                 case "reveal-nonce":
                     handle_reveal_nonce(msg)
