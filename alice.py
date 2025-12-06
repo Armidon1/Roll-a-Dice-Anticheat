@@ -10,26 +10,27 @@ from tcp_json import receive_json
 HOST = 'bob'
 PORT = 8080
 
-num_dadi = 5
+num_dices = 5
+num_alice_wins = 0
+num_bob_wins = 0
+count_games = 0
 
 my_move = ""
 my_nonce = ""
 bob_move = ""
 
-# TODO: implement the logic to determine the winner
 def determine_winner(my_move, bob_move):
     final_seed = my_move + bob_move
 
     random.seed(final_seed)
 
     alice_dice = []
-    for _ in range(num_dadi):
-        # random.randint usa il seed impostato sopra
+    for _ in range(num_dices):
         dado = random.randint(1, 6) 
         alice_dice.append(dado)
 
     bob_dice = []
-    for _ in range(num_dadi):
+    for _ in range(num_dices):
         dado = random.randint(1, 6)
         bob_dice.append(dado)
 
@@ -39,11 +40,16 @@ def determine_winner(my_move, bob_move):
     print(f"Dice Alice: {alice_dice} (Tot: {sum_alice})")
     print(f"Dice Bob:   {bob_dice} (Tot: {sum_bob})")
 
+    global num_alice_wins, num_bob_wins, count_games
+    count_games += 1
+
     if sum_alice > sum_bob:
         print("[Alice] I win!")
+        num_alice_wins += 1
         return "Alice"
     elif sum_bob > sum_alice:
         print("[Alice] Bob wins...")
+        num_bob_wins += 1
         return "Bob"
     else:
         print("[Alice] It's a draw!")
@@ -73,11 +79,12 @@ def handle_bob_move(message, conn):
     else:
         response = {
             "type": "reveal-nonce",
-            "value": my_nonce
+            "value": my_nonce,
+            "alice-move": my_move
         }
         send_json(conn, response)
         print("[alice] Sent nonce to Bob.")
-    return False
+    return True
     
 
 def game(message, conn):
@@ -111,10 +118,12 @@ def main():
         sleep(2)
         conn.connect((HOST, PORT))
         conn.settimeout(5.0)
-        print("[Alice] Arrivede to Bob.")
+        print("[Alice] Arrived to Bob.")
 
-        while True:
+        while True and count_games < 5:
             print("[Alice] Waiting for message...")
+            if count_games > 0:
+                game({}, conn)
             
             message = receive_json(conn)
             if not message:
@@ -125,6 +134,7 @@ def main():
                 break
         conn.close()
         print("[Alice] game over, connection closed.")
+    print(f"[Alice] Total Alice wins: {num_alice_wins}, Total Bob wins: {num_bob_wins}, Total games played: {count_games}")
     
 
 if __name__ == "__main__":

@@ -9,7 +9,9 @@ from time import sleep
 HOST = "0.0.0.0"
 PORT = 8080
 
-num_dadi = 5
+num_dices = 5
+num_alice_wins = 0
+num_bob_wins = 0
 
 alice_commitment = ""
 my_move = ""
@@ -22,13 +24,12 @@ def determine_winner(alice_move, my_move):
     random.seed(final_seed)
 
     alice_dice = []
-    for _ in range(num_dadi):
-        # random.randint usa il seed impostato sopra
+    for _ in range(num_dices):
         dado = random.randint(1, 6) 
         alice_dice.append(dado)
 
     bob_dice = []
-    for _ in range(num_dadi):
+    for _ in range(num_dices):
         dado = random.randint(1, 6)
         bob_dice.append(dado)
 
@@ -38,11 +39,14 @@ def determine_winner(alice_move, my_move):
     print(f"Dice Alice: {alice_dice} (Tot: {sum_alice})")
     print(f"Dice Bob:   {bob_dice} (Tot: {sum_bob})")
 
+    global num_alice_wins, num_bob_wins
     if sum_alice > sum_bob:
         print("[Bob] Alice wins...")
+        num_alice_wins += 1
         return "Alice"
     elif sum_bob > sum_alice:
         print("[Bob] I win!")
+        num_bob_wins += 1
         return "Bob"
     else:
         print("[Bob] It's a draw!")
@@ -121,6 +125,7 @@ def handle(conn):
 
     conn.close()
     print(f"[Bob] game over. Connection closed.")
+    print(f"[Bob] Total Alice wins: {num_alice_wins}, Total Bob wins: {num_bob_wins}")
 
 def main():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
